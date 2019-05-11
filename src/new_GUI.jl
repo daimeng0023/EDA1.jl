@@ -21,7 +21,7 @@ function launch()
     GLFW.SetErrorCallback(error_callback)
 
     # create window
-    window = GLFW.CreateWindow(1280, 720, "ElectroDermal Activity Analysis")
+    window = GLFW.CreateWindow(1600, 900, "ElectroDermal Activity Analysis")
     @assert window != C_NULL
     GLFW.MakeContextCurrent(window)
     GLFW.SwapInterval(1)  # enable vsync
@@ -201,7 +201,7 @@ function plotData(data::DataFrame)
         # st = data[1,1]
         # freq = data[2,1]
 
-        CImGui.Text("Primitives")
+        CImGui.Text("Color")
             sz, thickness, col = @cstatic sz=Cfloat(36.0) thickness=Cfloat(4.0) col=Cfloat[1.0,0.0,0.4,0.2] begin
                 CImGui.ColorEdit4("Color", col)
             end
@@ -272,11 +272,13 @@ function plotData2(data::DataFrame,data2::DataFrame)
         st2 = data2[1,1]
         freq2 = data2[2,1]
 
-        start_time, end_time = @cstatic start_time=Cint(1) end_time=Cint(2) begin
+        start_time, end_time, syn, start_time2, end_time2 = @cstatic start_time=Cint(1) end_time=Cint(2) syn=false start_time2=Cint(1) end_time2=Cint(2) begin
             @c CImGui.SliderInt("Start Time", &start_time, 1,len)
             CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
             time1=Dates.unix2datetime(st+(start_time-1)/freq)
             CImGui.Text(string(Time(time1)))
+            CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+            @c CImGui.Checkbox("synchronize",&syn)
             @c CImGui.SliderInt("End Time", &end_time, 2,len)
             CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
             time2=Dates.unix2datetime(st+(end_time-1)/freq)
@@ -286,9 +288,7 @@ function plotData2(data::DataFrame,data2::DataFrame)
             elseif start_time < end_time - 2000*freq
                 start_time = end_time - Cint(2000*freq)
             end
-        end
 
-        start_time2, end_time2 = @cstatic start_time2=Cint(1) end_time2=Cint(2) begin
             @c CImGui.SliderInt("Start Time2", &start_time2, 1,len2)
             CImGui.SameLine()
             time3=Dates.unix2datetime(st2+(start_time2-1)/freq2)
@@ -302,6 +302,16 @@ function plotData2(data::DataFrame,data2::DataFrame)
             elseif start_time2 < end_time2 - 2000*freq2
                 start_time2 = end_time2 - Cint(2000*freq2)
             end
+
+            if syn==true
+                if freq2>=freq
+                    start_time2=Cint((st-st2+(start_time-1)/freq)*freq2+1)
+                    end_time2=Cint((st-st2+(end_time-1)/freq)*freq2+1)
+                else
+                    start_time=Cint((st2-st+(start_time2-1)/freq2)*freq+1)
+                    end_time=Cint((st2-st+(end_time2-1)/freq2)*freq+1)
+                end
+            end
         end
 
         plot_data = Cfloat.(data[(start_time+2):(end_time+2),1])
@@ -313,7 +323,7 @@ function plotData2(data::DataFrame,data2::DataFrame)
         # freq2 = data2[2,1]
 
 
-        CImGui.Text("Primitives")
+        CImGui.Text("Color")
             sz, thickness, col = @cstatic sz=Cfloat(36.0) thickness=Cfloat(4.0) col=Cfloat[1.0,0.0,0.4,0.2] begin
                 CImGui.ColorEdit4("Color", col)
             end
