@@ -285,8 +285,8 @@ function plotData2(data::DataFrame,data2::DataFrame)
             CImGui.Text(string(Time(time2)))
             if start_time > end_time -1
                 start_time = end_time - Cint(1)
-            elseif start_time < end_time - 2000*freq
-                start_time = end_time - Cint(2000*freq)
+            # elseif start_time < end_time - 2000*freq
+            #    start_time = end_time - Cint(2000*freq)
             end
 
             @c CImGui.SliderInt("Start Time2", &start_time2, 1,len2)
@@ -299,8 +299,8 @@ function plotData2(data::DataFrame,data2::DataFrame)
             CImGui.Text(string(Time(time4)))
             if start_time2 > end_time2 -1
                 start_time2 = end_time2 - Cint(1)
-            elseif start_time2 < end_time2 - 2000*freq2
-                start_time2 = end_time2 - Cint(2000*freq2)
+            # elseif start_time2 < end_time2 - 2000*freq2
+            #    start_time2 = end_time2 - Cint(2000*freq2)
             end
 
             if syn==true
@@ -369,20 +369,17 @@ function plotData2(data::DataFrame,data2::DataFrame)
             time = Dates.unix2datetime(st+ (start_time-1)/freq)
             f = Cfloat(1 / freq)
             CImGui.AddLine(draw_list, ImVec2(x, y), ImVec2(x+width, y), col32_, Cfloat(1));
-            for xₙ in range(x, step = 1200/ (end_time-start_time+1), stop = x + width)
+            for xₙ in range(x, step = 120, stop = x + width)
                 hou = hour(time);
                 min = minute(time);
                 sec = second(time);
                 mil = millisecond(time);
-                if sec ==0 && mil ==0
-                    CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));
-                end
-                    #if mil ==0
-                if sec ==0 && mil ==0
-                        #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
-                    CImGui.AddText(draw_list, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));
-                end
-                next_time = time + Dates.Millisecond(f*1000);
+                #if sec ==0 && mil ==0
+                CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));   ###################################
+                #if mil ==0
+                #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
+                CImGui.AddText(draw_list, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));   ###############################
+                next_time = time + Dates.Millisecond(Cint((end_time-start_time+1)*f*100));
                 time = next_time;
             end
         end
@@ -416,25 +413,18 @@ function plotData2(data::DataFrame,data2::DataFrame)
             time = Dates.unix2datetime(st2+ (start_time2-1)/freq2)
             f = Cfloat(1 / freq2)
             CImGui.AddLine(draw_list2, ImVec2(x, y), ImVec2(x+width, y), col32_, Cfloat(1));
-            for xₙ in range(x, step = 1200/ (end_time2-start_time2+1), stop = x + width)
+            for xₙ in range(x, step = 120, stop = x + width)
                 hou = hour(time);
                 min = minute(time);
                 sec = second(time);
                 mil = millisecond(time);
-                if sec ==0 && mil ==0
-                    CImGui.AddLine(draw_list2, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));
-                end
-                    #if mil ==0
-                if sec ==0 && mil ==0
-                        #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
-                    CImGui.AddText(draw_list2, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));
-                end
-                next_time = time + Dates.Millisecond(f*1000);
+                CImGui.AddLine(draw_list2, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));
+                #if mil ==0
+                #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
+                CImGui.AddText(draw_list2, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));
+                next_time = time + Dates.Millisecond(Cint((end_time2-start_time2+1)*f*100));
                 time = next_time;
             end
         end
-
-
-
     end
 end
