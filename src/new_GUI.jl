@@ -306,10 +306,22 @@ function plotData2(data::DataFrame,data2::DataFrame)
             if syn==true
                 if freq2>=freq
                     start_time2=Cint((st-st2+(start_time-1)/freq)*freq2+1)
+                    if start_time2>len2-1
+                        start_time2=Cint(len2-1)
+                    end
                     end_time2=Cint((st-st2+(end_time-1)/freq)*freq2+1)
+                    if end_time2>len2
+                        end_time2=Cint(len2)
+                    end
                 else
                     start_time=Cint((st2-st+(start_time2-1)/freq2)*freq+1)
+                    if start_time>len-1
+                        start_time=Cint(len-1)
+                    end
                     end_time=Cint((st2-st+(end_time2-1)/freq2)*freq+1)
+                    if end_time>len
+                        end_time=Cint(len)
+                    end
                 end
             end
         end
