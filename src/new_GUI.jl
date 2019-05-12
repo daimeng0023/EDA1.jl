@@ -21,7 +21,7 @@ function launch()
     GLFW.SetErrorCallback(error_callback)
 
     # create window
-    window = GLFW.CreateWindow(1600, 900, "ElectroDermal Activity Analysis")
+    window = GLFW.CreateWindow(1600, 1200, "ElectroDermal Activity Analysis")
     @assert window != C_NULL
     GLFW.MakeContextCurrent(window)
     GLFW.SwapInterval(1)  # enable vsync
@@ -341,10 +341,11 @@ function plotData2(data::DataFrame,data2::DataFrame)
             end
             p = CImGui.GetCursorScreenPos()
             col32 = CImGui.ColorConvertFloat4ToU32(ImVec4(col...))
+
+        #Plotting Data 1(EDA data)
         begin
             width = 1200
             height = 200
-
             CImGui.PlotLines("EDA Measurements", plot_data, length(plot_data), 0 , "EDA", 0, Cfloat(max_value*1.2), (width,height))
             draw_list = CImGui.GetWindowDrawList()
             x::Cfloat = p.x
@@ -356,7 +357,7 @@ function plotData2(data::DataFrame,data2::DataFrame)
             end
         end
 
-        #draw the x axis
+        #draw the x axis of EDA data
         p = CImGui.GetCursorScreenPos()
         begin
             width = 1200
@@ -384,6 +385,41 @@ function plotData2(data::DataFrame,data2::DataFrame)
             end
         end
 
+        #draw the EDA overview
+        CImGui.NewLine()
+        overview_data = Cfloat.(data[3:end,1])
+        begin
+            width = 1200
+            height = 100
+            CImGui.PlotLines("EDA Overview", overview_data, length(overview_data), 0 , "EDA", 0, Cfloat(max_value*1.2), (width,height))
+            draw_list = CImGui.GetWindowDrawList()
+            p = CImGui.GetCursorScreenPos()
+            x = p.x
+            y = p.y
+            spacing = 8.0
+            time = Dates.unix2datetime(st)
+            f = Cfloat(1 / freq)
+            CImGui.AddLine(draw_list, ImVec2(x, y), ImVec2(x+width, y), col32_, Cfloat(1));
+            for xₙ in range(x, step = 60, stop = x + width)
+                hou = hour(time);
+                min = minute(time);
+                sec = second(time);
+                mil = millisecond(time);
+                #if sec ==0 && mil ==0
+                CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));   ###################################
+                #if mil ==0
+                #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
+                CImGui.AddText(draw_list, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));   ###############################
+                next_time = time + Dates.Millisecond(Cint(len*f*50));
+                time = next_time;
+            end
+            CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y-105), col32_, Cfloat(3));
+            CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y-105), col32_, Cfloat(3));
+        end
+
+        CImGui.NewLine()
+        CImGui.NewLine()
+        #plotting Date 2(HR data)
         CImGui.NewLine()
         p = CImGui.GetCursorScreenPos()
         begin
@@ -400,7 +436,7 @@ function plotData2(data::DataFrame,data2::DataFrame)
             end
         end
 
-        #draw the x axis
+        #draw the x axis of HR
         p = CImGui.GetCursorScreenPos()
         begin
             width = 1200
@@ -425,6 +461,41 @@ function plotData2(data::DataFrame,data2::DataFrame)
                 next_time = time + Dates.Millisecond(Cint((end_time2-start_time2+1)*f*100));
                 time = next_time;
             end
+        end
+
+        #draw the overview HR
+        CImGui.NewLine()
+        overview_data2 = Cfloat.(data2[3:end,1])
+        begin
+            width = 1200
+            height = 100
+            CImGui.PlotLines("HR Overview", overview_data2, length(overview_data2), 0 , "HR", 0, Cfloat(max_value2*1.2), (width,height))
+            draw_list = CImGui.GetWindowDrawList()
+            # for yₙ in range(y, step = 50, stop = y + height)
+            #     CImGui.AddRectFilled(draw_list, ImVec2(x, yₙ), ImVec2(x+width, yₙ+20), Cfloat[255.0,255.0,255.0,0.5]);
+            # end
+            p = CImGui.GetCursorScreenPos()
+            x = p.x
+            y = p.y
+            spacing = 8.0
+            time = Dates.unix2datetime(st2)
+            f = Cfloat(1 / freq2)
+            CImGui.AddLine(draw_list, ImVec2(x, y), ImVec2(x+width, y), col32_, Cfloat(1));
+            for xₙ in range(x, step = 60, stop = x + width)
+                hou = hour(time);
+                min = minute(time);
+                sec = second(time);
+                mil = millisecond(time);
+                #if sec ==0 && mil ==0
+                CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));   ###################################
+                #if mil ==0
+                #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
+                CImGui.AddText(draw_list, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));   ###############################
+                next_time = time + Dates.Millisecond(Cint(len2*f*50));
+                time = next_time;
+            end
+            CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len2-1)*(start_time2-1)), y), ImVec2(x+Cfloat(1200/(len2-1)*(start_time2-1)), y-105), col32_, Cfloat(3));
+            CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len2-1)*(end_time2-1)), y), ImVec2(x+Cfloat(1200/(len2-1)*(end_time2-1)), y-105), col32_, Cfloat(3));
         end
     end
 end
