@@ -12,6 +12,7 @@ using Printf
 using DataFrames
 using CSV
 using Dates
+using Statistics
 
 include("filedialog.jl")
 include("new_GUI.jl")

@@ -116,8 +116,6 @@ function launch()
             CImGui.End()
         end
 
-
-
         # rendering
         CImGui.Render()
         GLFW.MakeContextCurrent(window)
@@ -329,8 +327,10 @@ function plotData2(data::DataFrame,data2::DataFrame)
         plot_data = Cfloat.(data[(start_time+2):(end_time+2),1])
         # st = data[1,1]
         # freq = data[2,1]
-
+        mean1= mean(plot_data)
+        #CImGui.Text(string(mean1))
         plot_data2 = Cfloat.(data2[(start_time2+2):(end_time2+2),1])
+        mean2= mean(plot_data2)
         # st2 = data2[1,1]
         # freq2 = data2[2,1]
 
@@ -346,7 +346,7 @@ function plotData2(data::DataFrame,data2::DataFrame)
         begin
             width = 1200
             height = 200
-            CImGui.PlotLines("EDA Measurements", plot_data, length(plot_data), 0 , "EDA", 0, Cfloat(max_value*1.2), (width,height))
+            CImGui.PlotLines("EDA Measurements", plot_data, length(plot_data), 0 , string("EDA Mean:",string(mean1)), 0, Cfloat(max_value*1.2), (width,height))
             draw_list = CImGui.GetWindowDrawList()
             x::Cfloat = p.x
             y::Cfloat = p.y
@@ -418,14 +418,14 @@ function plotData2(data::DataFrame,data2::DataFrame)
         end
 
         CImGui.NewLine()
-        CImGui.NewLine()
+        CImGui.Separator()
         #plotting Date 2(HR data)
         CImGui.NewLine()
         p = CImGui.GetCursorScreenPos()
         begin
             width = 1200
             height = 200
-            CImGui.PlotLines("HR Measurements", plot_data2, length(plot_data2), 0 , "HR", 0, Cfloat(max_value2*1.2), (width,height))
+            CImGui.PlotLines("HR Measurements", plot_data2, length(plot_data2), 0 , string("HR Mean:",string(mean2)), 0, Cfloat(max_value2*1.2), (width,height))
             draw_list2 = CImGui.GetWindowDrawList()
             x = p.x
             y = p.y
