@@ -85,32 +85,64 @@ function launch()
             display_dialog!(open_file_dialog)
             if has_pending_action(open_file_dialog)
                 # Check filename and perform different action.
-                data = perform_dialog_action(open_file_dialog)
-                # eda_data = ...
-                # hr_data = ...
-                consume_action!(open_file_dialog)
-                #dt = Cfloat.(data[3:end,1])
-                Base.display(data)
-                Open_files = true
+                if occursin("eda",lowercase(get_file(open_file_dialog,ConfirmedStatus())))
+                    data = perform_dialog_action(open_file_dialog)
+                    # eda_data = ...
+                    # hr_data = ...
+                    consume_action!(open_file_dialog)
+                    #dt = Cfloat.(data[3:end,1])
+
+                    Base.display(data)
+                    Open_files = true
+                    # status = ConfirmedStatus();
+                else
+                    # CImGui.Begin("Error!")
+                    # CImGui.Text("This is not the target file!")
+                    Base.display(get_file(open_file_dialog,ConfirmedStatus()))
+                    CImGui.OpenPopup("Incorrect File?")
+                    consume_action!(open_file_dialog)
+                end
             end
         end
 
         if isvisible(open_file_dialog2)
             display_dialog!(open_file_dialog2)
             if has_pending_action(open_file_dialog2)
-                data2 = perform_dialog_action(open_file_dialog2)
-                consume_action!(open_file_dialog2)
-                #dt = Cfloat.(data[3:end,1])
-                Base.display(data2)
-                Open_files2 = true
+                if occursin("hr",lowercase(get_file(open_file_dialog2,ConfirmedStatus())))
+                    data2 = perform_dialog_action(open_file_dialog2)
+                    consume_action!(open_file_dialog2)
+                    #dt = Cfloat.(data[3:end,1])
+                    Base.display(data2)
+                    Open_files2 = true
+                    #status2 = ConfirmedStatus()
+                else
+                    Base.display(get_file(open_file_dialog2,UnconfirmedStatus()))
+                    consume_action!(open_file_dialog2)
+                    CImGui.OpenPopup("Incorrect File?")
+                end
+                # data2 = perform_dialog_action(open_file_dialog2)
+                # consume_action!(open_file_dialog2)
+                # #dt = Cfloat.(data[3:end,1])
+                # Base.display(data2)
+                # Open_files2 = true
             end
         end
-            #@c CImGui.Checkbox("Open files", &Open_files)
-        if Open_files
-            if !Open_files2
+        if CImGui.BeginPopupModal("Incorrect File?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
+            CImGui.Text("File does not conform to expected schema.\nPlease verify that: \n   (1) the file exists; \n   (2) you have permission to access the file; \n (3) you have chosen the right file type. \n \n")
+            CImGui.Separator()
+            CImGui.Button("OK", (120, 0)) && CImGui.CloseCurrentPopup()
+            CImGui.SetItemDefaultFocus()
+            CImGui.EndPopup()
+        end
+
+        #@c CImGui.Checkbox("Open files", &Open_files)
+        if Open_files || Open_files2
+            if !Open_files2 && Open_files
                 # data_length = ...
-                plotData(data)
-            elseif Open_files2
+                plotData(data,"EDA Measurements")
+            elseif !Open_files && Open_files2
+                plotData(data2,"HR Measurements")
+            elseif Open_files && Open_files2
                 plotData2(data,data2)
             end
             CImGui.End()
@@ -142,28 +174,28 @@ function perform_dialog_action(dialog::OpenFileDialog)
     directory = get_directory(dialog, ConfirmedStatus())
     file_name = get_file(dialog, ConfirmedStatus())
     path = joinpath(directory, file_name)
-    data = CSV.File(path ; header= ["EDA"]) |> DataFrame
+    data = CSV.File(path ; header= [get_file(dialog,ConfirmedStatus())]) |> DataFrame
 end
 
 function populate_file_menu!(dialog::AbstractDialog,dialog2::AbstractDialog)
-    if CImGui.MenuItem("Open", "Ctrl+O")
-        set_visibility!(dialog, true)
-    end
-    if CImGui.MenuItem("Open2", "Ctrl+O")
-        set_visibility!(dialog2, true)
+    if CImGui.BeginMenu("Import")
+        if CImGui.MenuItem("Open EDA")
+            set_visibility!(dialog, true)
+        end
+        if CImGui.MenuItem("Open HR")
+            set_visibility!(dialog2, true)
+        end
+        CImGui.EndMenu()
     end
     if CImGui.MenuItem("Save", "Ctrl+s")
-
     end
     if CImGui.MenuItem("Save as")
-
     end
     if CImGui.MenuItem("Quit", "Alt+F4")
-
     end
 end
 
-function plotData(data::DataFrame)
+function plotData(data::DataFrame,name::String)
     begin
         #df = CSV.read("F:\\julia\\CSV\\EDA.csv", header = ["EDA"])
         #df = CSV.read("C:\\Users\\msi-\\Desktop\\EDA\\EDA.jl\\src\\HR.csv", header = ["HR"])
@@ -210,7 +242,7 @@ function plotData(data::DataFrame)
                 width = 1200
                 height = 200
 
-                CImGui.PlotLines("EDA Measurements", plot_data, length(plot_data), 0 , "EDA", 0, Cfloat(max_value*1.2), (width,height))
+                CImGui.PlotLines(string(name," Measurements"), plot_data, length(plot_data), 0 , name, 0, Cfloat(max_value*1.2), (width,height))
                 draw_list = CImGui.GetWindowDrawList()
                 x::Cfloat = p.x
                 y::Cfloat = p.y
