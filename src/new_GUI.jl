@@ -222,14 +222,15 @@ function plotData(data::DataFrame,name::String)
             CImGui.Text(string(Time(time2)))
             if start_time > end_time -1
                 start_time = end_time - Cint(1)
-            elseif start_time < end_time - 2000*freq
-                start_time = end_time - Cint(2000*freq)
+            #elseif start_time < end_time - 2000*freq
+            #    start_time = end_time - Cint(2000*freq)
             end
         end
 
         plot_data = Cfloat.(data[(start_time+2):(end_time+2),1])
         # st = data[1,1]
         # freq = data[2,1]
+        mean1= mean(plot_data)
 
         CImGui.Text("Color")
             sz, thickness, col = @cstatic sz=Cfloat(36.0) thickness=Cfloat(4.0) col=Cfloat[1.0,0.0,0.4,0.2] begin
@@ -242,46 +243,75 @@ function plotData(data::DataFrame,name::String)
                 width = 1200
                 height = 200
 
-                CImGui.PlotLines(string(name," Measurements"), plot_data, length(plot_data), 0 , name, 0, Cfloat(max_value*1.2), (width,height))
+                CImGui.PlotLines("EDA Measurements", plot_data, length(plot_data), 0 , string("EDA Mean:",string(mean1)), 0, Cfloat(max_value*1.2), (width,height))
                 draw_list = CImGui.GetWindowDrawList()
                 x::Cfloat = p.x
                 y::Cfloat = p.y
                 spacing = 8.0
-                    # Draws (almost transparent) horizontal bars
+                # Draws (almost transparent) horizontal bars
                 for yₙ in range(y, step = 40, stop = y + height - 40)
                     CImGui.AddRectFilled(draw_list, ImVec2(x, yₙ), ImVec2(x+width, yₙ+20), col32);
                 end
             end
 
-            #draw the x axis
+            #draw the x axis of EDA data
             p = CImGui.GetCursorScreenPos()
             begin
                 width = 1200
-                col = Cfloat[0.0,0.0,0.0,1.0]
-                col32 = CImGui.ColorConvertFloat4ToU32(ImVec4(col...))
+                col_ = Cfloat[0.0,0.0,0.0,1.0]
+                col32_ = CImGui.ColorConvertFloat4ToU32(ImVec4(col_...))
                 draw_list = CImGui.GetWindowDrawList()
                 x = p.x
                 y = p.y
 
                 time = Dates.unix2datetime(st+ (start_time-1)/freq)
                 f = Cfloat(1 / freq)
-                CImGui.AddLine(draw_list, ImVec2(x, y), ImVec2(x+width, y), col32, Cfloat(1));
-                for xₙ in range(x, step = 1200/ (end_time-start_time+1), stop = x + width)
+                CImGui.AddLine(draw_list, ImVec2(x, y), ImVec2(x+width, y), col32_, Cfloat(1));
+                for xₙ in range(x, step = 120, stop = x + width)
                     hou = hour(time);
                     min = minute(time);
                     sec = second(time);
                     mil = millisecond(time);
-                    if sec ==0 && mil ==0
-                        CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32, Cfloat(1));
-                    end
-                        #if mil ==0
-                    if sec ==0 && mil ==0
-                            #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
-                        CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(hou), ":", string(min)));
-                    end
-                    next_time = time + Dates.Millisecond(f*1000);
+                    #if sec ==0 && mil ==0
+                    CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));   ###################################
+                    #if mil ==0
+                    #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
+                    CImGui.AddText(draw_list, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));   ###############################
+                    next_time = time + Dates.Millisecond(Cint((end_time-start_time+1)*f*100));
                     time = next_time;
                 end
+            end
+
+            #draw the EDA overview
+            CImGui.NewLine()
+            overview_data = Cfloat.(data[3:end,1])
+            begin
+                width = 1200
+                height = 100
+                CImGui.PlotLines("EDA Overview", overview_data, length(overview_data), 0 , "EDA", 0, Cfloat(max_value*1.2), (width,height))
+                draw_list = CImGui.GetWindowDrawList()
+                p = CImGui.GetCursorScreenPos()
+                x = p.x
+                y = p.y
+                spacing = 8.0
+                time = Dates.unix2datetime(st)
+                f = Cfloat(1 / freq)
+                CImGui.AddLine(draw_list, ImVec2(x, y), ImVec2(x+width, y), col32_, Cfloat(1));
+                for xₙ in range(x, step = 60, stop = x + width)
+                    hou = hour(time);
+                    min = minute(time);
+                    sec = second(time);
+                    mil = millisecond(time);
+                    #if sec ==0 && mil ==0
+                    CImGui.AddLine(draw_list, ImVec2(xₙ, y), ImVec2(xₙ, y-5), col32_, Cfloat(1));   ###################################
+                    #if mil ==0
+                    #CImGui.AddText(draw_list, ImVec2(xₙ, y), col32, string(string(min), ":", string(sec)));
+                    CImGui.AddText(draw_list, ImVec2(xₙ, y), col32_, string(string(hou), ":", string(min)));   ###############################
+                    next_time = time + Dates.Millisecond(Cint(len*f*50));
+                    time = next_time;
+                end
+                CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y-105), col32_, Cfloat(3));
+                CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y-105), col32_, Cfloat(3));
             end
     end
 end
