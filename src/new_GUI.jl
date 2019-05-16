@@ -333,38 +333,53 @@ function plotData2(data::DataFrame,data2::DataFrame)
         freq2 = data2[2,1]
 
         start_time, end_time, syn, start_time2, end_time2 = @cstatic start_time=Cint(1) end_time=Cint(2) syn=false start_time2=Cint(1) end_time2=Cint(2) begin
-            @c CImGui.SliderInt("Start Time", &start_time, 1,len)
-            CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
-            time1=Dates.unix2datetime(st+(start_time-1)/freq)
-            CImGui.Text(string(Time(time1)))
-            CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
-            @c CImGui.Checkbox("synchronize",&syn)
-            @c CImGui.SliderInt("End Time", &end_time, 2,len)
-            CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
-            time2=Dates.unix2datetime(st+(end_time-1)/freq)
-            CImGui.Text(string(Time(time2)))
-            if start_time > end_time -1
-                start_time = end_time - Cint(1)
-            # elseif start_time < end_time - 2000*freq
-            #    start_time = end_time - Cint(2000*freq)
-            end
+            if syn==false
+                @c CImGui.SliderInt("Start Time", &start_time, 1,len)
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                time1=Dates.unix2datetime(st+(start_time-1)/freq)
+                CImGui.Text(string(Time(time1)))
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                @c CImGui.Checkbox("synchronize",&syn)
+                @c CImGui.SliderInt("End Time", &end_time, 2,len)
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                time2=Dates.unix2datetime(st+(end_time-1)/freq)
+                CImGui.Text(string(Time(time2)))
+                if start_time > end_time -1
+                    start_time = end_time - Cint(1)
+                # elseif start_time < end_time - 2000*freq
+                #    start_time = end_time - Cint(2000*freq)
+                end
 
-            @c CImGui.SliderInt("Start Time2", &start_time2, 1,len2)
-            CImGui.SameLine()
-            time3=Dates.unix2datetime(st2+(start_time2-1)/freq2)
-            CImGui.Text(string(Time(time3)))
-            @c CImGui.SliderInt("End Time2", &end_time2, 2,len2)
-            CImGui.SameLine()
-            time4=Dates.unix2datetime(st2+(end_time2-1)/freq2)
-            CImGui.Text(string(Time(time4)))
-            if start_time2 > end_time2 -1
-                start_time2 = end_time2 - Cint(1)
-            # elseif start_time2 < end_time2 - 2000*freq2
-            #    start_time2 = end_time2 - Cint(2000*freq2)
-            end
-
-            if syn==true
+                @c CImGui.SliderInt("Start Time2", &start_time2, 1,len2)
+                CImGui.SameLine()
+                time3=Dates.unix2datetime(st2+(start_time2-1)/freq2)
+                CImGui.Text(string(Time(time3)))
+                @c CImGui.SliderInt("End Time2", &end_time2, 2,len2)
+                CImGui.SameLine()
+                time4=Dates.unix2datetime(st2+(end_time2-1)/freq2)
+                CImGui.Text(string(Time(time4)))
+                if start_time2 > end_time2 -1
+                    start_time2 = end_time2 - Cint(1)
+                # elseif start_time2 < end_time2 - 2000*freq2
+                #    start_time2 = end_time2 - Cint(2000*freq2)
+                end
+            else
                 if freq2>=freq
+                    @c CImGui.SliderInt("Start Time", &start_time, 1,len)
+                    CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                    time1=Dates.unix2datetime(st+(start_time-1)/freq)
+                    CImGui.Text(string(Time(time1)))
+                    CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                    @c CImGui.Checkbox("synchronize",&syn)
+                    @c CImGui.SliderInt("End Time", &end_time, 2,len)
+                    CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                    time2=Dates.unix2datetime(st+(end_time-1)/freq)
+                    CImGui.Text(string(Time(time2)))
+                    if start_time > end_time -1
+                        start_time = end_time - Cint(1)
+                    # elseif start_time < end_time - 2000*freq
+                    #    start_time = end_time - Cint(2000*freq)
+                    end
                     start_time2=Cint((st-st2+(start_time-1)/freq)*freq2+1)
                     if start_time2>len2-1
                         start_time2=Cint(len2-1)
@@ -374,6 +389,21 @@ function plotData2(data::DataFrame,data2::DataFrame)
                         end_time2=Cint(len2)
                     end
                 else
+                    @c CImGui.SliderInt("Start Time", &start_time2, 1,len2)
+                    CImGui.SameLine()
+                    time3=Dates.unix2datetime(st2+(start_time2-1)/freq2)
+                    CImGui.Text(string(Time(time3)))
+                    CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                    @c CImGui.Checkbox("synchronize",&syn)
+                    @c CImGui.SliderInt("End Time", &end_time2, 2,len2)
+                    CImGui.SameLine()
+                    time4=Dates.unix2datetime(st2+(end_time2-1)/freq2)
+                    CImGui.Text(string(Time(time4)))
+                    if start_time2 > end_time2 -1
+                        start_time2 = end_time2 - Cint(1)
+                    # elseif start_time2 < end_time2 - 2000*freq2
+                    #    start_time2 = end_time2 - Cint(2000*freq2)
+                    end
                     start_time=Cint((st2-st+(start_time2-1)/freq2)*freq+1)
                     if start_time>len-1
                         start_time=Cint(len-1)
