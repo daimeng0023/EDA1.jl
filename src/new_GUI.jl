@@ -85,7 +85,7 @@ function launch()
             display_dialog!(open_file_dialog)
             if has_pending_action(open_file_dialog)
                 # Check filename and perform different action.
-                if occursin("eda",lowercase(get_file(open_file_dialog,ConfirmedStatus())))
+                if occursin("eda",lowercase(get_file(open_file_dialog,ConfirmedStatus())))&& occursin("csv",lowercase(get_file(open_file_dialog,ConfirmedStatus())))
                     data = perform_dialog_action(open_file_dialog)
                     # eda_data = ...
                     # hr_data = ...
@@ -108,7 +108,7 @@ function launch()
         if isvisible(open_file_dialog2)
             display_dialog!(open_file_dialog2)
             if has_pending_action(open_file_dialog2)
-                if occursin("hr",lowercase(get_file(open_file_dialog2,ConfirmedStatus())))
+                if occursin("hr",lowercase(get_file(open_file_dialog2,ConfirmedStatus())))&&occursin("csv",lowercase(get_file(open_file_dialog2,ConfirmedStatus())))
                     data2 = perform_dialog_action(open_file_dialog2)
                     consume_action!(open_file_dialog2)
                     #dt = Cfloat.(data[3:end,1])
@@ -195,6 +195,11 @@ function populate_file_menu!(dialog::AbstractDialog,dialog2::AbstractDialog)
     end
 end
 
+function extract_string(buffer)
+     first_nul = findfirst(isequal('\0'), buffer) - 1
+     buffer[1:first_nul]
+end
+
 function plotData(data::DataFrame,name::String)
     begin
         #df = CSV.read("F:\\julia\\CSV\\EDA.csv", header = ["EDA"])
@@ -211,7 +216,9 @@ function plotData(data::DataFrame,name::String)
 
         st = data[1,1]
         freq = data[2,1]
-        start_time, end_time = @cstatic start_time=Cint(1) end_time=Cint(2) begin
+        buf="1"*"\0"^(15)
+        #buf2="00:00:00"*"\0"^(8)
+        start_time, end_time, SorE = @cstatic start_time=Cint(1) end_time=Cint(2) SorE=false begin
             @c CImGui.SliderInt("Start Time", &start_time, 1,len)
             CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
             time1=Dates.unix2datetime(st+(start_time-1)/freq)
@@ -225,6 +232,23 @@ function plotData(data::DataFrame,name::String)
             #elseif start_time < end_time - 2000*freq
             #    start_time = end_time - Cint(2000*freq)
             end
+            @c CImGui.Checkbox("start or end",&SorE)
+            if SorE==true
+                CImGui.Text("Start time:")
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                CImGui.InputText("",buf,length(buf))
+                CImGui.Text(string("Start time:",extract_string(buf)))
+            else
+                CImGui.Text("End time:")
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                CImGui.InputText("",buf,length(buf))
+                CImGui.Text(string("End time:",extract_string(buf)))
+            end
+            # CImGui.SameLine(5.0,CImGui.GetStyle().ItemInnerSpacing.x)
+            # CImGui.Text("End time:")
+            # CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+            # CImGui.InputText("",buf2,length(buf2))
+            # CImGui.Text(extract_string(buf2))
         end
 
         plot_data = Cfloat.(data[(start_time+2):(end_time+2),1])
@@ -331,6 +355,7 @@ function plotData2(data::DataFrame,data2::DataFrame)
         freq = data[2,1]
         st2 = data2[1,1]
         freq2 = data2[2,1]
+        # buf="type sth here"*"\0"^(127)
 
         start_time, end_time, syn, start_time2, end_time2 = @cstatic start_time=Cint(1) end_time=Cint(2) syn=false start_time2=Cint(1) end_time2=Cint(2) begin
             if syn==false
@@ -349,6 +374,8 @@ function plotData2(data::DataFrame,data2::DataFrame)
                 # elseif start_time < end_time - 2000*freq
                 #    start_time = end_time - Cint(2000*freq)
                 end
+                # CImGui.InputText("",buf,length(buf))
+                # CImGui.Text(extract_string(buf))
 
                 @c CImGui.SliderInt("Start Time2", &start_time2, 1,len2)
                 CImGui.SameLine()

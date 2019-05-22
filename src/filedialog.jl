@@ -104,7 +104,7 @@ function display_unconfirmed_file(dialog::AbstractDialog)
     CImGui.SameLine()
     file_name₀ = get_file(dialog, UnconfirmedStatus())
     file_name₁ = file_name₀*"\0"^(1)
-    buffer = Cstring(pointer(file_name₁))
+    buffer = file_name₁
     CImGui.InputText("",buffer, length(file_name₁),  CImGui.ImGuiInputTextFlags_ReadOnly)
 end
 
