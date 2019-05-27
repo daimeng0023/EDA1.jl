@@ -222,7 +222,7 @@ function plotData(data::DataFrame,name::String)
         sec_arr = [ string(s) for s = 0:59]
 
         #buf2="00:00:00"*"\0"^(8)
-        start_time, end_time, SorE, in_hou, in_min, in_sec = @cstatic start_time=Cint(1) end_time=Cint(2) SorE=false in_hou=Cint(1) in_min=Cint(1) in_sec=Cint(1) begin
+        start_time, end_time, SorE, in_hou, in_min, in_sec = @cstatic start_time=Cint(1) end_time=Cint(2) SorE=Cint(0) in_hou=Cint(1) in_min=Cint(1) in_sec=Cint(1) begin
             @c CImGui.SliderInt("Start Time", &start_time, 1,len)
             CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
             time1=Dates.unix2datetime(st+(start_time-1)/freq)
@@ -236,14 +236,9 @@ function plotData(data::DataFrame,name::String)
             #elseif start_time < end_time - 2000*freq
             #    start_time = end_time - Cint(2000*freq)
             end
-            @c CImGui.Checkbox("start or end",&SorE)
-            if SorE==true
+            @c CImGui.Combo("###0",&SorE," \0start\0end\0")
+            if SorE==1
                 CImGui.Text("Start time:")
-                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
-                CImGui.InputText("",buf,length(buf))
-                CImGui.Text(string("Start time:",extract_string(buf)))
-            else
-                CImGui.Text("End time:")
                 CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
                 CImGui.PushItemWidth(50)
                 # CImGui.InputText("",buf,length(buf))
@@ -251,10 +246,38 @@ function plotData(data::DataFrame,name::String)
                 CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
                 @c CImGui.Combo(":###2", &in_min, min_arr,length(min_arr))
                 CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
-                @c CImGui.Combo("", &in_sec, sec_arr,length(sec_arr))
+                @c CImGui.Combo("###3", &in_sec, sec_arr,length(sec_arr))
+                CImGui.PopItemWidth()
+                #tmp_time = Date(Dates.unix2datetime(st))+Time(in_hou-1,in_min-1,in_sec-1)
+                #start_time=(tmp_time-Dates.unix2datetime(st))/1000*freq+1
+                tmp_time = Time(in_hou,in_min,in_sec)
+                for i=1:len
+                    if tmp_time==Time(Dates.unix2datetime(st+Cint(i-1)/freq))
+                        start_time=Cint(i)
+                        break
+                    end
+                end
+            elseif SorE==2
+                CImGui.Text("End time:")
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                CImGui.PushItemWidth(50)
+                # CImGui.InputText("",buf,length(buf))
+                @c CImGui.Combo(":###4", &in_hou, hou_arr,length(hou_arr))
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                @c CImGui.Combo(":###5", &in_min, min_arr,length(min_arr))
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                @c CImGui.Combo("###6", &in_sec, sec_arr,length(sec_arr))
                 CImGui.PopItemWidth()
                 # CImGui.Text(string("End time:",extract_string(buf)))
-
+                #tmp_time = Date(Dates.unix2datetime(st))+Time(in_hou-1,in_min-1,in_sec-1)
+                #end_time=(tmp_time-Dates.unix2datetime(st))/1000*freq+1
+                tmp_time = Time(in_hou,in_min,in_sec)
+                for i=2:len
+                    if tmp_time==Time(Dates.unix2datetime(st+Cint(i-1)/freq))
+                        end_time=Cint(i)
+                        break
+                    end
+                end
             end
             # CImGui.SameLine(5.0,CImGui.GetStyle().ItemInnerSpacing.x)
             # CImGui.Text("End time:")
@@ -368,8 +391,10 @@ function plotData2(data::DataFrame,data2::DataFrame)
         st2 = data2[1,1]
         freq2 = data2[2,1]
         # buf="type sth here"*"\0"^(127)
-
-        start_time, end_time, syn, start_time2, end_time2 = @cstatic start_time=Cint(1) end_time=Cint(2) syn=false start_time2=Cint(1) end_time2=Cint(2) begin
+        hou_arr = [ string(s) for s = 0:23]
+        min_arr = [ string(s) for s = 0:59]
+        sec_arr = [ string(s) for s = 0:59]
+        start_time, end_time, syn, start_time2, end_time2= @cstatic start_time=Cint(1) end_time=Cint(2) syn=false start_time2=Cint(1) end_time2=Cint(2) begin
             if syn==false
                 @c CImGui.SliderInt("Start Time", &start_time, 1,len)
                 CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
@@ -388,6 +413,51 @@ function plotData2(data::DataFrame,data2::DataFrame)
                 end
                 # CImGui.InputText("",buf,length(buf))
                 # CImGui.Text(extract_string(buf))
+                SorE, in_hou, in_min, in_sec =@cstatic  SorE=Cint(0) in_hou=Cint(1) in_min=Cint(1) in_sec=Cint(1) begin
+                    @c CImGui.Combo("###0",&SorE," \0start\0end\0")
+                    if SorE==1
+                        CImGui.Text("Start time:")
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        CImGui.PushItemWidth(50)
+                        # CImGui.InputText("",buf,length(buf))
+                        @c CImGui.Combo(":###1", &in_hou, hou_arr,length(hou_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo(":###2", &in_min, min_arr,length(min_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo("###3", &in_sec, sec_arr,length(sec_arr))
+                        CImGui.PopItemWidth()
+                        #tmp_time = Date(Dates.unix2datetime(st))+Time(in_hou-1,in_min-1,in_sec-1)
+                        #start_time=(tmp_time-Dates.unix2datetime(st))/1000*freq+1
+                        tmp_time = Time(in_hou,in_min,in_sec)
+                        for i=1:len
+                            if tmp_time==Time(Dates.unix2datetime(st+Cint(i-1)/freq))
+                                start_time=Cint(i)
+                                break
+                            end
+                        end
+                    elseif SorE==2
+                        CImGui.Text("End time:")
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        CImGui.PushItemWidth(50)
+                        # CImGui.InputText("",buf,length(buf))
+                        @c CImGui.Combo(":###4", &in_hou, hou_arr,length(hou_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo(":###5", &in_min, min_arr,length(min_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo("###6", &in_sec, sec_arr,length(sec_arr))
+                        CImGui.PopItemWidth()
+                        # CImGui.Text(string("End time:",extract_string(buf)))
+                        #tmp_time = Date(Dates.unix2datetime(st))+Time(in_hou-1,in_min-1,in_sec-1)
+                        #end_time=(tmp_time-Dates.unix2datetime(st))/1000*freq+1
+                        tmp_time = Time(in_hou,in_min,in_sec)
+                        for i=2:len
+                            if tmp_time==Time(Dates.unix2datetime(st+Cint(i-1)/freq))
+                                end_time=Cint(i)
+                                break
+                            end
+                        end
+                    end
+                end
 
                 @c CImGui.SliderInt("Start Time2", &start_time2, 1,len2)
                 CImGui.SameLine()
@@ -401,6 +471,51 @@ function plotData2(data::DataFrame,data2::DataFrame)
                     start_time2 = end_time2 - Cint(1)
                 # elseif start_time2 < end_time2 - 2000*freq2
                 #    start_time2 = end_time2 - Cint(2000*freq2)
+                end
+                SorE2, in_hou2, in_min2, in_sec2 =@cstatic SorE2=Cint(0) in_hou2=Cint(1) in_min2=Cint(1) in_sec2=Cint(1) begin
+                    @c CImGui.Combo("###10",&SorE2," \0start\0end\0")
+                    if SorE2==1
+                        CImGui.Text("Start time:")
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        CImGui.PushItemWidth(50)
+                        # CImGui.InputText("",buf,length(buf))
+                        @c CImGui.Combo(":###11", &in_hou2, hou_arr,length(hou_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo(":###12", &in_min2, min_arr,length(min_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo("###13", &in_sec2, sec_arr,length(sec_arr))
+                        CImGui.PopItemWidth()
+                        #tmp_time = Date(Dates.unix2datetime(st))+Time(in_hou-1,in_min-1,in_sec-1)
+                        #start_time=(tmp_time-Dates.unix2datetime(st))/1000*freq+1
+                        tmp_time2 = Time(in_hou2,in_min2,in_sec2)
+                        for j=1:len2
+                            if tmp_time2==Time(Dates.unix2datetime(st2+Cint(j-1)/freq2))
+                                start_time2=Cint(j)
+                                break
+                            end
+                        end
+                    elseif SorE2==2
+                        CImGui.Text("End time:")
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        CImGui.PushItemWidth(50)
+                        # CImGui.InputText("",buf,length(buf))
+                        @c CImGui.Combo(":###14", &in_hou2, hou_arr,length(hou_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo(":###15", &in_min2, min_arr,length(min_arr))
+                        CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                        @c CImGui.Combo("###16", &in_sec2, sec_arr,length(sec_arr))
+                        CImGui.PopItemWidth()
+                        # CImGui.Text(string("End time:",extract_string(buf)))
+                        #tmp_time = Date(Dates.unix2datetime(st))+Time(in_hou-1,in_min-1,in_sec-1)
+                        #end_time=(tmp_time-Dates.unix2datetime(st))/1000*freq+1
+                        tmp_time2 = Time(in_hou2,in_min2,in_sec2)
+                        for j=2:len2
+                            if tmp_time2==Time(Dates.unix2datetime(st2+Cint(j-1)/freq2))
+                                end_time2=Cint(j)
+                                break
+                            end
+                        end
+                    end
                 end
             else
                 if freq2>=freq
