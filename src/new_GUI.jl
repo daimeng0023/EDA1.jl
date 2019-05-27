@@ -217,8 +217,12 @@ function plotData(data::DataFrame,name::String)
         st = data[1,1]
         freq = data[2,1]
         buf="1"*"\0"^(15)
+        hou_arr = [ string(s) for s = 0:23]
+        min_arr = [ string(s) for s = 0:59]
+        sec_arr = [ string(s) for s = 0:59]
+
         #buf2="00:00:00"*"\0"^(8)
-        start_time, end_time, SorE = @cstatic start_time=Cint(1) end_time=Cint(2) SorE=false begin
+        start_time, end_time, SorE, in_hou, in_min, in_sec = @cstatic start_time=Cint(1) end_time=Cint(2) SorE=false in_hou=Cint(1) in_min=Cint(1) in_sec=Cint(1) begin
             @c CImGui.SliderInt("Start Time", &start_time, 1,len)
             CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
             time1=Dates.unix2datetime(st+(start_time-1)/freq)
@@ -241,13 +245,16 @@ function plotData(data::DataFrame,name::String)
             else
                 CImGui.Text("End time:")
                 CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
-                CImGui.PushItemWidth(100)
-                CImGui.InputText("",buf,length(buf))
+                CImGui.PushItemWidth(50)
+                # CImGui.InputText("",buf,length(buf))
+                @c CImGui.Combo(":###1", &in_hou, hou_arr,length(hou_arr))
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                @c CImGui.Combo(":###2", &in_min, min_arr,length(min_arr))
+                CImGui.SameLine(0.0,CImGui.GetStyle().ItemInnerSpacing.x)
+                @c CImGui.Combo("", &in_sec, sec_arr,length(sec_arr))
                 CImGui.PopItemWidth()
-                CImGui.Text(string("End time:",extract_string(buf)))
-                #    CImGui.PushItemWidth(100)
-                #    @c CImGui.Combo("func", &func_type, "Sin\0Saw\0")
-                #    CImGui.PopItemWidth()
+                # CImGui.Text(string("End time:",extract_string(buf)))
+
             end
             # CImGui.SameLine(5.0,CImGui.GetStyle().ItemInnerSpacing.x)
             # CImGui.Text("End time:")
