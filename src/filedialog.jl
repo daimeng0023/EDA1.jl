@@ -7,10 +7,37 @@ mutable struct OpenFileDialog <: AbstractDialog
     unconfirmed_file::String
     visible::Bool
     unprocessed_action::Bool
+    time_export::DateTime
+    data_import::DataFrame
+    data_export::DataFrame
 end
 
 struct ConfirmedStatus <: AbstractStatus end
 struct UnconfirmedStatus <: AbstractStatus end
+
+function set_time(dialog::OpenFileDialog, time::DateTime)
+    dialog.time_export = time
+end
+
+function get_time(dialog::OpenFileDialog)
+    dialog.time_export
+end
+
+function set_data_import(dialog::OpenFileDialog,data::DataFrame)
+    dialog.data_import = data
+end
+
+function get_data_import(dialog::OpenFileDialog)
+    dialog.data_import
+end
+
+function set_data_export(dialog::OpenFileDialog,data::DataFrame)
+    dialog.data_export = data
+end
+
+function get_data_export(dialog::OpenFileDialog)
+    dialog.data_export
+end
 
 function get_directory(dialog::AbstractDialog, status::UnconfirmedStatus)
     dialog.unconfirmed_directory
