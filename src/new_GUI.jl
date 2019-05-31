@@ -164,11 +164,11 @@ function launch()
         if Open_files || Open_files2
             if !Open_files2 && Open_files
                 # data_length = ...
-                plotData(open_file_dialog,"EDA Measurements")
+                plotData(open_file_dialog,"EDA Measurements",open_file_dialog3)
             elseif !Open_files && Open_files2
-                plotData(open_file_dialog2,"HR Measurements")
+                plotData(open_file_dialog2,"HR Measurements",open_file_dialog3)
             elseif Open_files && Open_files2
-                plotData2(open_file_dialog,open_file_dialog2)
+                plotData2(open_file_dialog,open_file_dialog2,open_file_dialog3)
             end
             CImGui.End()
         end
@@ -245,7 +245,7 @@ function extract_string(buffer)
      buffer[1:first_nul]
 end
 
-function plotData(dialog::AbstractDialog,name::String)
+function plotData(dialog::AbstractDialog,name::String,dialog3::AbstractDialog)
     begin
         #df = CSV.read("F:\\julia\\CSV\\EDA.csv", header = ["EDA"])
         #df = CSV.read("C:\\Users\\msi-\\Desktop\\EDA\\EDA.jl\\src\\HR.csv", header = ["HR"])
@@ -417,11 +417,19 @@ function plotData(dialog::AbstractDialog,name::String)
                 end
                 CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y-105), col32_, Cfloat(3));
                 CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y-105), col32_, Cfloat(3));
+                if isvisible(dialog3)
+                    data3 = get_data_import(dialog3)
+                    len3 = size(data,1)
+                    #Cfloat.(data[(start_time+2):(end_time+2),1])
+                    for i=1:len3
+                        CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y), ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y-105), col32_, Cfloat(3));
+                    end
+                end
             end
     end
 end
 
-function plotData2(dialog::AbstractDialog,dialog2::AbstractDialog)
+function plotData2(dialog::AbstractDialog,dialog2::AbstractDialog,dialog3::AbstractDialog)
     begin
         CImGui.Begin("Plot")
         CImGui.Text("Plot")
