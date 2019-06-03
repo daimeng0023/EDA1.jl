@@ -10,6 +10,7 @@ mutable struct OpenFileDialog <: AbstractDialog
     time_export::DateTime
     data_import::DataFrame
     data_export::DataFrame
+    is_imported::Bool
 end
 
 struct ConfirmedStatus <: AbstractStatus end
@@ -69,7 +70,12 @@ end
 function set_file!(dialog::AbstractDialog, file_name::String, status::UnconfirmedStatus)
     dialog.unconfirmed_file = file_name
 end
-
+function isis_imported(dialog::AbstractDialog)
+    dialog.is_imported
+end
+function set_imported(dialog::AbstractDialog)
+    dialog.is_imported = true
+end
 function isvisible(dialog::AbstractDialog)
     dialog.visible
 end

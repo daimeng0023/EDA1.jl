@@ -55,9 +55,9 @@ function launch()
     ImGui_ImplOpenGL3_Init(glsl_version)
     clear_color = Cfloat[0.45, 0.55, 0.60, 1.00]
 
-    open_file_dialog = OpenFileDialog(pwd(),"", pwd(),"", false, false,Date(0),DataFrame(),DataFrame())
-    open_file_dialog2 = OpenFileDialog(pwd(),"",pwd(),"",false,false,Date(0),DataFrame(),DataFrame())
-    open_file_dialog3 = OpenFileDialog(pwd(),"",pwd(),"",false,false,Date(0),DataFrame(),DataFrame())
+    open_file_dialog = OpenFileDialog(pwd(),"", pwd(),"", false, false,Date(0),DataFrame(),DataFrame(),false)
+    open_file_dialog2 = OpenFileDialog(pwd(),"",pwd(),"",false,false,Date(0),DataFrame(),DataFrame(),false)
+    open_file_dialog3 = OpenFileDialog(pwd(),"",pwd(),"",false,false,Date(0),DataFrame(),DataFrame(),false)
     # data = DataFrame()
     # dt = Float32[]
     # data2 = DataFrame()
@@ -96,6 +96,7 @@ function launch()
 
                     Base.display(get_data_import(open_file_dialog))
                     Open_files = true
+                    set_imported(open_file_dialog)
                     # status = ConfirmedStatus();
                 else
                     # CImGui.Begin("Error!")
@@ -115,6 +116,7 @@ function launch()
                     #dt = Cfloat.(data[3:end,1])
                     Base.display(get_data_import(open_file_dialog2))
                     Open_files2 = true
+                    set_imported(open_file_dialog2)
                     #status2 = ConfirmedStatus()
                 else
                     Base.display(get_file(open_file_dialog2,UnconfirmedStatus()))
@@ -141,6 +143,7 @@ function launch()
 
                     Base.display(get_data_import(open_file_dialog3))
                     Open_files3 = true
+                    set_imported(open_file_dialog3)
                     # status = ConfirmedStatus();
                 else
                     # CImGui.Begin("Error!")
@@ -220,19 +223,16 @@ function populate_file_menu!(dialog::AbstractDialog,dialog2::AbstractDialog,dial
     if CImGui.BeginMenu("Save as")
         if CImGui.MenuItem("Export EDA")
             #data = CSV.File("C:\\Users\\msi-\\Desktop\\EDA project\\EDA1.jl\\src\\EDA.csv" ; header= ["edaSave"]) |> DataFrame
-            CImGui.OpenPopup("Export EDA File?")
-            if CImGui.BeginPopupModal("Export EDA File?", C_NULL, CImGui.ImGuiWindowFlags_AlwaysAutoResize)
-                CImGui.Text("File does not conform to expected schema.\nPlease verify that: \n   (1) the file exists; \n   (2) you have permission to access the file; \n (3) you have chosen the right file type. \n \n")
-                CImGui.Separator()
-                CImGui.Button("OK", (120, 0)) && CImGui.CloseCurrentPopup()
-                CImGui.SetItemDefaultFocus()
-                CImGui.EndPopup()
+            if isis_imported(dialog)
+                saveCsv(dialog,"edaSave.csv")
             end
-            saveCsv(dialog,"edaSave.csv")
+            # saveCsv(dialog,"edaSave.csv")
         end
         if CImGui.MenuItem("Export HR")
-            CImGui.OpenPopup("Export File?")
-            saveCsv(dialog2,"hrSave.csv")
+            if isis_imported(dialog2)
+                saveCsv(dialog2,"hrSave.csv")
+            end
+            # saveCsv(dialog2,"hrSave.csv")
         end
         CImGui.EndMenu()
     end
@@ -348,7 +348,7 @@ function plotData(dialog::AbstractDialog,name::String,dialog3::AbstractDialog)
                 width = 1200
                 height = 200
 
-                CImGui.PlotLines("EDA Measurements", plot_data, length(plot_data), 0 , string("EDA Mean:",string(mean1)), 0, Cfloat(max_value*1.2), (width,height))
+                CImGui.PlotLines(name, plot_data, length(plot_data), 0 , string("Mean:",string(mean1)), 0, Cfloat(max_value*1.2), (width,height))
                 draw_list = CImGui.GetWindowDrawList()
                 x::Cfloat = p.x
                 y::Cfloat = p.y
@@ -393,7 +393,7 @@ function plotData(dialog::AbstractDialog,name::String,dialog3::AbstractDialog)
             begin
                 width = 1200
                 height = 100
-                CImGui.PlotLines("EDA Overview", overview_data, length(overview_data), 0 , "EDA", 0, Cfloat(max_value*1.2), (width,height))
+                CImGui.PlotLines("Overview", overview_data, length(overview_data), 0 , name, 0, Cfloat(max_value*1.2), (width,height))
                 draw_list = CImGui.GetWindowDrawList()
                 p = CImGui.GetCursorScreenPos()
                 x = p.x
@@ -417,12 +417,13 @@ function plotData(dialog::AbstractDialog,name::String,dialog3::AbstractDialog)
                 end
                 CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y-105), col32_, Cfloat(3));
                 CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y-105), col32_, Cfloat(3));
-                if isvisible(dialog3)
+                if isis_imported(dialog3)
                     data3 = get_data_import(dialog3)
-                    len3 = size(data,1)
+                    len3 = size(data3,1)
+                    # Base.display(len3)
                     #Cfloat.(data[(start_time+2):(end_time+2),1])
                     for i=1:len3
-                        CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y), ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y-105), col32_, Cfloat(3));
+                        CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y), ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y-105), col32, Cfloat(3));
                     end
                 end
             end
@@ -810,6 +811,15 @@ function plotData2(dialog::AbstractDialog,dialog2::AbstractDialog,dialog3::Abstr
             end
             CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(start_time-1)), y-105), col32_, Cfloat(3));
             CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y), ImVec2(x+Cfloat(1200/(len-1)*(end_time-1)), y-105), col32_, Cfloat(3));
+            if isis_imported(dialog3)
+                data3 = get_data_import(dialog3)
+                len3 = size(data3,1)
+                # Base.display(len3)
+                #Cfloat.(data[(start_time+2):(end_time+2),1])
+                for i=1:len3
+                    CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y), ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y-105), col32, Cfloat(3));
+                end
+            end
         end
 
         CImGui.NewLine()
@@ -891,6 +901,15 @@ function plotData2(dialog::AbstractDialog,dialog2::AbstractDialog,dialog3::Abstr
             end
             CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len2-1)*(start_time2-1)), y), ImVec2(x+Cfloat(1200/(len2-1)*(start_time2-1)), y-105), col32_, Cfloat(3));
             CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len2-1)*(end_time2-1)), y), ImVec2(x+Cfloat(1200/(len2-1)*(end_time2-1)), y-105), col32_, Cfloat(3));
+            if isis_imported(dialog3)
+                data3 = get_data_import(dialog3)
+                len3 = size(data3,1)
+                # Base.display(len3)
+                #Cfloat.(data[(start_time+2):(end_time+2),1])
+                for i=1:len3
+                    CImGui.AddLine(draw_list, ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y), ImVec2(x+Cfloat(1200/(len-1)*(data3[i,1]-st)), y-105), col32, Cfloat(3));
+                end
+            end
         end
     end
 end
